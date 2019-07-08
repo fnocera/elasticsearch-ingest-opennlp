@@ -35,6 +35,7 @@ public class OpenNlpServiceTests extends ESTestCase {
                 .put("ingest.opennlp.model.file.names", "en-ner-persons.bin")
                 .put("ingest.opennlp.model.file.locations", "en-ner-locations.bin")
                 .put("ingest.opennlp.model.file.dates", "en-ner-dates.bin")
+                .put("ingest.opennlp.model.file.organizations", "en-ner-organization.bin")
                 .build();
         OpenNlpService service = new OpenNlpService(getDataPath("/models/en-ner-persons.bin").getParent(), settings);
         service.start();
@@ -50,5 +51,9 @@ public class OpenNlpServiceTests extends ESTestCase {
         ExtractedEntities dateEntities = service.find("Yesterday has been the hottest day of the year.", "dates");
         assertThat(dateEntities.getEntityValues(), hasSize(1));
         assertThat(dateEntities.getEntityValues(), contains("Yesterday"));
+
+        ExtractedEntities orgEntities = service.find("Microsoft Corp is one of the largest tech companies in the world.", "organizations");
+        assertThat(orgEntities.getEntityValues(), hasSize(1));
+        assertThat(orgEntities.getEntityValues(), contains("Microsoft Corp"));
     }
 }

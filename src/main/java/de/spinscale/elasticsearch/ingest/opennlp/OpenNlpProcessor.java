@@ -23,6 +23,7 @@ import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -63,9 +64,12 @@ public class OpenNlpProcessor extends AbstractProcessor {
             mergeExisting(entities, ingestDocument, targetField);
 
             List<ExtractedEntities> extractedEntities = new ArrayList<>();
+            List<String> tokens = null;
             for (String field : fields) {
                 ExtractedEntities data = openNlpService.find(content, field);
                 extractedEntities.add(data);
+                if (tokens == null) {
+                    tokens = Arrays.asList(data.getTokens());                }
                 merge(entities, field, data.getEntityValues());
             }
 
@@ -78,6 +82,9 @@ public class OpenNlpProcessor extends AbstractProcessor {
             }
 
             ingestDocument.setFieldValue(targetField, entitiesToStore);
+            if (tokens != null) {
+                ingestDocument.setFieldValue("tokens", tokens);
+            }
 
             if (Strings.hasLength(annotatedTextField) && extractedEntities.isEmpty() == false) {
                 String annotatedText = OpenNlpService.createAnnotatedText(content, extractedEntities);

@@ -6,6 +6,22 @@ This processor is doing named/date/location/'whatever you have a model for' enti
 
 This plugin is also intended to show you, that using gradle as a build system makes it very easy to reuse the testing facilities that elasticsearch already provides. First, you can run regular tests, but by adding a rest test, the plugin will be packaged and unzipped against elasticsearch, allowing you to execute a real end-to-end test, by just adding a java test class.
 
+## Edits Since Forking
+After forking the repo [here]() I made some minor edits to show the process of editing/changing the plugin. 
+
+1. After forking as the first simple example I added some new models. 
+- Added new models (`en-ner-organization.bin`) in the `integTestCluster` and `downloadModels` task in `build.gradle`. 
+- Edited reference here `src/main/java/de/spinscale/elasticsearch/ingest/opennlp/OpenNlpModelDownloader.java`
+
+2. Added appropriate test examples and updated references. 
+
+3. Run tests with `./gradlew clean test`
+
+4. Run commands `./gradlew clean check` this will create the `.zip` file in `build/distributions`to upload to a new release in github to reference. This reference is then used in our project Dockerfile.  
+
+Note: our app depends on `elasticsearchVersion = 7.1.1` so we set it in `gradle/properties`. 
+
+
 ## Installation
 
 | ES    | Command |
@@ -151,6 +167,7 @@ You can configure own models per field, the setting for this is prefixed `ingest
 | ingest.opennlp.model.file.date     | Configure the file for date entity recognition for the field date         |
 | ingest.opennlp.model.file.person   | Configure the file for person entity recognition for the field person     |
 | ingest.opennlp.model.file.WHATEVER | Configure the file for WHATEVER entity recognition for the field WHATEVER |
+We have added a few additional models/fields here....
 
 ## Development setup & running tests
 
@@ -174,4 +191,5 @@ Ensure that you have the models downloaded, before testing.
 
 * A couple of groovy build mechanisms from core are disabled. See the `build.gradle` for further explanations
 * Only the most basic NLP functions are exposed, please fork and add your own code to this!
+
 

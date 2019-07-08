@@ -36,7 +36,8 @@ public class OpenNlpModelDownloader extends EnvironmentAwareCommand {
     }
 
     public OpenNlpModelDownloader() {
-        super("Downloads three sample models for named entity recognition for dates, locations and persons");
+        super("Downloads four sample models for named entity recognition for dates, " + 
+             "locations, persons and organizations and also returns the tokens.");
     }
 
     @Override
@@ -50,12 +51,14 @@ public class OpenNlpModelDownloader extends EnvironmentAwareCommand {
         download(baseUrl + "en-ner-person.bin", configDirectoryPath.resolve("en-ner-persons.bin"), terminal);
         download(baseUrl + "en-ner-location.bin", configDirectoryPath.resolve("en-ner-locations.bin"), terminal);
         download(baseUrl + "en-ner-date.bin", configDirectoryPath.resolve("en-ner-dates.bin"), terminal);
+        download(baseUrl + "en-ner-organization.bin", configDirectoryPath.resolve("en-ner-organization.bin"), terminal);
 
         terminal.println("\nyou can use the following configuration settings now\n");
 
         terminal.println("ingest.opennlp.model.file.persons: en-ner-persons.bin");
         terminal.println("ingest.opennlp.model.file.dates: en-ner-dates.bin");
         terminal.println("ingest.opennlp.model.file.locations: en-ner-locations.bin");
+        terminal.println("ingest.opennlp.model.file.organizations: en-ner-organization.bin");
     }
 
     @SuppressForbidden(reason = "we have to download the models, so we have to open a socket")

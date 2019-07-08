@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
@@ -54,6 +55,7 @@ public class OpenNlpProcessorTests extends ESTestCase {
                 .put("ingest.opennlp.model.file.names", "en-ner-persons.bin")
                 .put("ingest.opennlp.model.file.locations", "en-ner-locations.bin")
                 .put("ingest.opennlp.model.file.dates", "en-ner-dates.bin")
+                .put("ingest.opennlp.model.file.organizations", "en-ner-organization.bin")
                 .build();
 
         Path path = PathUtils.get(OpenNlpProcessorTests.class.getResource("/models/en-ner-persons.bin").toURI());
@@ -62,13 +64,27 @@ public class OpenNlpProcessorTests extends ESTestCase {
 
     public void testThatExtractionsWork() throws Exception {
         OpenNlpProcessor processor = new OpenNlpProcessor(service, randomAlphaOfLength(10), "source_field", "target_field",
-                null, new HashSet<>(Arrays.asList("names", "dates", "locations")));
+                null, new HashSet<>(Arrays.asList("names", "dates", "locations", "organizations")));
 
         Map<String, Object> entityData = getIngestDocumentData(processor);
 
         assertThatHasElements(entityData, "names", "Kobe Bryant", "Michael Jordan");
         assertThatHasElements(entityData, "dates", "Yesterday");
         assertThatHasElements(entityData, "locations", "Munich", "New York");
+        assertThatHasElements(entityData, "organizations", "Microsoft Corp");
+    }
+
+    public void testTokenExtractionsWork() throws Exception {
+        OpenNlpProcessor processor = new OpenNlpProcessor(service, randomAlphaOfLength(10), "source_field", "target_field",
+                null, new HashSet<>(Arrays.asList("names", "dates", "locations", "organizations")));
+
+        IngestDocument ingestDocument = getIngestDocument();
+        ingestDocument = processor.execute(ingestDocument);
+        @SuppressWarnings("unchecked")
+        List<String> tokens = (List<String>) ingestDocument.getFieldValue("tokens", List.class);
+        
+        assertThat(tokens, hasItems("Kobe", "Bryant", "was", "one", "best", "basketball", "Microsoft", ".", "Munich", "Yesterday"));
+
     }
 
     public void testThatFieldsCanBeExcluded() throws Exception {
@@ -84,7 +100,7 @@ public class OpenNlpProcessorTests extends ESTestCase {
 
     public void testThatExistingValuesAreMergedWithoutDuplicates() throws Exception {
         OpenNlpProcessor processor = new OpenNlpProcessor(service, randomAlphaOfLength(10), "source_field", "target_field",
-                null, new HashSet<>(Arrays.asList("names", "dates", "locations")));
+                null, new HashSet<>(Arrays.asList("names", "dates", "locations", "organizations")));
 
         IngestDocument ingestDocument = getIngestDocument();
 
@@ -92,6 +108,7 @@ public class OpenNlpProcessorTests extends ESTestCase {
         entityData.put("names", Arrays.asList("Magic Johnson", "Kobe Bryant"));
         entityData.put("locations", Arrays.asList("Paris", "Munich"));
         entityData.put("dates", Arrays.asList("Today", "Yesterday"));
+        entityData.put("organizations", Arrays.asList("Microsoft Corp", "Walmart"));
 
         ingestDocument.setFieldValue("target_field", entityData);
 
@@ -102,6 +119,7 @@ public class OpenNlpProcessorTests extends ESTestCase {
         assertThatHasElements(entityData, "names", "Magic Johnson", "Kobe Bryant", "Michael Jordan");
         assertThatHasElements(entityData, "dates", "Today", "Yesterday");
         assertThatHasElements(entityData, "locations", "Paris", "Munich", "New York");
+        assertThatHasElements(entityData, "organizations", "Microsoft Corp", "Walmart");
     }
 
     public void testConstructorNoFieldsSpecified() throws Exception {
@@ -118,11 +136,12 @@ public class OpenNlpProcessorTests extends ESTestCase {
         assertThatHasElements(entityData, "names", "Kobe Bryant", "Michael Jordan");
         assertThatHasElements(entityData, "dates", "Yesterday");
         assertThatHasElements(entityData, "locations", "Munich", "New York");
+        assertThatHasElements(entityData, "organizations", "Microsoft Corp");
     }
 
     public void testToXContent() throws Exception {
         OpenNlpProcessor processor = new OpenNlpProcessor(service, randomAlphaOfLength(10), "source_field", "target_field",
-                null, new HashSet<>(Arrays.asList("names", "dates", "locations")));
+                null, new HashSet<>(Arrays.asList("names", "dates", "locations", "organizations")));
 
         IngestDocument ingestDocument = getIngestDocument();
         processor.execute(ingestDocument);
@@ -148,7 +167,8 @@ public class OpenNlpProcessorTests extends ESTestCase {
         assertThat(content, is("[Kobe Bryant](Person_Kobe Bryant) was one of the best basketball players of all times. Not even" +
                 " [Michael Jordan](Person_Michael Jordan) has ever scored 81 points in one game. [Munich](Location_Munich) is really" +
                 " an awesome city, but [New York](Location_New York) is as well. [Yesterday](Date_Yesterday) has been the hottest" +
-                " day of the year."));
+                " day of the year." +
+                " [Microsoft Corp](Organization_Microsoft Corp) is one of the largest tech companies in the world."));
     }
 
     private Map<String, Object> getIngestDocumentData(OpenNlpProcessor processor) throws Exception {
@@ -159,7 +179,7 @@ public class OpenNlpProcessorTests extends ESTestCase {
     private IngestDocument getIngestDocument() throws Exception {
         return getIngestDocument("Kobe Bryant was one of the best basketball players of all times. Not even Michael Jordan has ever " +
                 "scored 81 points in one game. Munich is really an awesome city, but New York is as well. Yesterday has been the " +
-                "hottest day of the year.");
+                "hottest day of the year. Microsoft Corp is one of the largest tech companies in the world.");
     }
 
     private IngestDocument getIngestDocument(String content) throws Exception {
